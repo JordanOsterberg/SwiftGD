@@ -322,57 +322,6 @@ public class Image {
 // MARK: Import & Export
 
 extension Image {
-    public convenience init?(url: URL) {
-        let inputFile = fopen(url.path, "rb")
-        defer { fclose(inputFile) }
-
-        guard inputFile != nil else { return nil }
-
-        let loadedImage: gdImagePtr?
-
-        if url.lastPathComponent.lowercased().hasSuffix("jpg") || url.lastPathComponent.lowercased().hasSuffix("jpeg") {
-            loadedImage = gdImageCreateFromJpeg(inputFile)
-        } else if url.lastPathComponent.lowercased().hasSuffix("png") {
-            loadedImage = gdImageCreateFromPng(inputFile)
-        } else {
-            return nil
-        }
-
-        guard let image = loadedImage else { return nil }
-        self.init(gdImage: image)
-    }
-
-    @discardableResult
-    public func write(to url: URL, quality: Int = 100, allowOverwrite: Bool = false) -> Bool {
-        let fileType = url.pathExtension.lowercased()
-        guard fileType == "png" || fileType == "jpeg" || fileType == "jpg" else { return false }
-
-        let fm = FileManager()
-
-        if !allowOverwrite {
-            // refuse to overwrite existing files
-            guard fm.fileExists(atPath: url.path) == false else { return false }
-        }
-
-        // open our output file, then defer it to close
-        let outputFile = fopen(url.path, "wb")
-        defer { fclose(outputFile) }
-
-        // write the correct output format based on the path extension
-        switch fileType {
-        case "png":
-            gdImageSaveAlpha(internalImage, 1)
-            gdImagePng(internalImage, outputFile)
-        case "jpg", "jpeg":
-            gdImageJpeg(internalImage, outputFile, Int32(quality))
-        default:
-            return false
-        }
-
-        // return true or false based on whether the output file now exists
-        return fm.fileExists(atPath: url.path)
-    }
-
     /// Initializes a new `Image` instance from given image data in specified raster format.
     /// If `DefaultImportableRasterFormat` is omitted, all supported raster formats will be evaluated.
     ///
